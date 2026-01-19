@@ -76,20 +76,22 @@ declare interface ShareInputProps {
 }
 
 // Extend Appwrite Models.Document with custom file properties
-declare namespace Models {
-  interface Document {
-    bucketFileId?: string;
-    name?: string;
-    type?: FileType;
-    extension?: string;
-    url?: string;
-    size?: number;
-    owner?: {
-      $id: string;
-      fullName: string;
-      email: string;
-      avatar: string;
-    };
-    users?: string[];
+declare module "node-appwrite" {
+  namespace Models {
+    interface Document {
+      bucketFileId: string;
+      name: string;
+      type: string;
+      extension: string;
+      url: string;
+      size: number;
+      owner: {
+        $id: string;
+        fullName: string;
+        email: string;
+        avatar: string;
+      };
+      users: string[];
+    }
   }
 }
