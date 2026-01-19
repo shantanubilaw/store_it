@@ -74,3 +74,22 @@ declare interface ShareInputProps {
   onInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemove: (email: string) => void;
 }
+
+// Extend Appwrite Models.Document with custom file properties
+declare namespace Models {
+  interface Document {
+    bucketFileId?: string;
+    name?: string;
+    type?: FileType;
+    extension?: string;
+    url?: string;
+    size?: number;
+    owner?: {
+      $id: string;
+      fullName: string;
+      email: string;
+      avatar: string;
+    };
+    users?: string[];
+  }
+}
