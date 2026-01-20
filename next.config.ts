@@ -8,6 +8,8 @@ const nextConfig: NextConfig = {
         'localhost:3000',
         '*.app.github.dev',
         '*.github.dev',
+        'shantanusresume.online',
+        'www.shantanusresume.online',
       ],
     },
   },
