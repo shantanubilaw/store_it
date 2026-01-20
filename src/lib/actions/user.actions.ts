@@ -1,8 +1,10 @@
 "use server";
 
-import { createAdminClient } from "@/lib/appwrite";
+import { createAdminClient, createSessionClient } from "@/lib/appwrite";
 import { ID } from "node-appwrite";
 import { parseStringify } from "@/lib/utils";
+import { cookies } from "next/headers";
+import { appwriteConfig } from "@/lib/appwrite/config";
 
 const handleError = (error: unknown, message: string) => {
   console.log(error, message);
@@ -30,11 +32,33 @@ export const createAccount = async ({
 }) => {
   try {
     console.log("Creating account for:", email, fullName);
-    
+
     const accountId = await sendEmailOTP({ email });
     console.log("Account ID from OTP:", accountId);
-    
+
     if (!accountId) throw new Error("Failed to send an OTP");
+
+    // Try to store user data in database (optional, won't block auth if fails)
+    try {
+      const { databases } = await createAdminClient();
+      await databases.createDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.usersCollectionId,
+        accountId,
+        {
+          // Match Appwrite collection attribute names (case sensitive)
+          accountId,
+          Email: email,
+          email, // include lowercase if collection requires it
+          FullName: fullName,
+          avatar: "",
+        }
+      );
+      console.log("User document created in database");
+    } catch (dbError) {
+      console.warn("Warning: Could not create user document in database:", dbError);
+      // Don't fail the entire sign up process if database write fails
+    }
 
     return parseStringify({ accountId });
   } catch (error) {
@@ -44,12 +68,14 @@ export const createAccount = async ({
 };
 
 export const signInUser = async ({ email }: { email: string }) => {
+  const { account } = await createAdminClient();
+
   try {
     console.log("Signing in user:", email);
-    
+
     const accountId = await sendEmailOTP({ email });
     console.log("Account ID from OTP:", accountId);
-    
+
     if (!accountId) throw new Error("Failed to send an OTP");
 
     return parseStringify({ accountId });
@@ -66,23 +92,77 @@ export const verifySecret = async ({
   accountId: string;
   password: string;
 }) => {
-  console.log("Verifying OTP for accountId:", accountId, "with password:", password);
-  console.log("OTP verification successful! (Demo mode - not actually verifying)");
-  return parseStringify({ sessionId: "demo-session-id" });
+  const { account } = await createAdminClient();
+
+  try {
+    console.log("Verifying OTP for accountId:", accountId);
+
+    // Create session with OTP token
+    const session = await account.createSession(accountId, password);
+
+    if (!session) throw new Error("Failed to create session");
+
+    // Set session cookie
+    const cookieStore = await cookies();
+    cookieStore.set("appwrite-session", session.secret, {
+      path: "/",
+      httpOnly: true,
+      sameSite: "none", // allow in Codespaces HTTPS environment
+      secure: true,
+    });
+
+    console.log("OTP verification successful!");
+    return parseStringify({ sessionId: session.$id });
+  } catch (error) {
+    console.error("Error verifying OTP:", error);
+    handleError(error, "Failed to verify OTP");
+  }
 };
 
 export const getCurrentUser = async () => {
-  // Demo mode - return a mock user
-  return parseStringify({
-    $id: "demo-user-id",
-    accountId: "demo-account-id",
-    email: "demo@example.com",
-    fullName: "Demo User",
-    avatar: "https://img.freepik.com/free-psd/3d-illustration-person-with-sunglasses_23-2149436188.jpg",
-  });
+  try {
+    const { account, databases } = await createSessionClient();
+
+    const accountDetails = await account.get();
+    
+    // Try to get user document from database
+    try {
+      const userDoc = await databases.getDocument(
+        appwriteConfig.databaseId,
+        appwriteConfig.usersCollectionId,
+        accountDetails.$id
+      );
+      return parseStringify(userDoc);
+    } catch (dbError) {
+      console.warn("Warning: Could not fetch user from database:", dbError);
+      // Return minimal user data from account if database fetch fails
+      return parseStringify({
+        $id: accountDetails.$id,
+        accountId: accountDetails.$id,
+        email: accountDetails.email,
+        fullName: accountDetails.name || "",
+        avatar: "",
+      });
+    }
+  } catch (error) {
+    console.error("Error getting current user:", error);
+    return null;
+  }
 };
 
 export const signOutUser = async () => {
-  console.log("User signed out (Demo mode)");
-  // In demo mode, just log - don't actually sign out
+  const { account } = await createSessionClient();
+
+  try {
+    await account.deleteSession("current");
+
+    // Clear session cookie
+    const cookieStore = await cookies();
+    cookieStore.delete("appwrite-session");
+
+    console.log("User signed out successfully");
+  } catch (error) {
+    console.error("Error signing out:", error);
+    handleError(error, "Failed to sign out");
+  }
 };
