@@ -79,6 +79,9 @@ declare interface ShareInputProps {
 declare module "node-appwrite" {
   namespace Models {
     interface Document {
+      $id: string;
+      $createdAt: string;
+      $updatedAt: string;
       bucketFileId: string;
       name: string;
       type: string;
@@ -92,6 +95,7 @@ declare module "node-appwrite" {
         avatar: string;
       };
       users: string[];
+      email?: string;
     }
   }
 }

@@ -5,6 +5,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
+import type { Models } from "node-appwrite";
 
 const ImageThumbnail = ({ file }: { file: any }) => (
   <div className="file-details-thumbnail">

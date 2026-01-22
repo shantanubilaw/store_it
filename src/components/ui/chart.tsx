@@ -7,6 +7,10 @@ import {
   Payload,
   ValueType,
 } from "recharts/types/component/DefaultTooltipContent"
+import type {
+  DefaultLegendContentProps,
+  TooltipContentProps,
+} from "recharts"
 
 import { cn } from "@/lib/utils"
 
@@ -109,13 +113,14 @@ const ChartTooltip = RechartsPrimitive.Tooltip
 
 const ChartTooltipContent = React.forwardRef<
   HTMLDivElement,
-  React.ComponentProps<typeof RechartsPrimitive.Tooltip> &
+  TooltipContentProps<ValueType, NameType> &
     React.ComponentProps<"div"> & {
       hideLabel?: boolean
       hideIndicator?: boolean
       indicator?: "line" | "dot" | "dashed"
       nameKey?: string
       labelKey?: string
+      color?: string
     }
 >(
   (
@@ -266,7 +271,7 @@ const ChartLegend = RechartsPrimitive.Legend
 const ChartLegendContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> &
-    Pick<RechartsPrimitive.LegendProps, "payload" | "verticalAlign"> & {
+    DefaultLegendContentProps & {
       hideIcon?: boolean
       nameKey?: string
     }

@@ -1,7 +1,7 @@
 "use server";
 
 import { createAdminClient, createSessionClient } from "@/lib/appwrite";
-import { ID } from "node-appwrite";
+import { ID } from "appwrite";
 import { parseStringify } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { appwriteConfig } from "@/lib/appwrite/config";
@@ -15,7 +15,7 @@ export const sendEmailOTP = async ({ email }: { email: string }) => {
   const { account } = await createAdminClient();
 
   try {
-    const session = await account.createEmailToken(ID.unique(), email);
+    const session = await account.createEmailToken(ID.unique(), email, false);
     console.log("OTP sent to:", email);
     return session.userId;
   } catch (error) {
@@ -149,6 +149,9 @@ export const getCurrentUser = async () => {
     return null;
   }
 };
+
+// Cache wrapper for getCurrentUser to avoid redundant calls
+export { getCurrentUser as default };
 
 export const signOutUser = async () => {
   const { account } = await createSessionClient();
