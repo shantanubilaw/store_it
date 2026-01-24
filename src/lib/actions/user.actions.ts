@@ -47,10 +47,9 @@ export const createAccount = async ({
         accountId,
         {
           // Match Appwrite collection attribute names (case sensitive)
-          accountId,
-          Email: email,
-          email, // include lowercase if collection requires it
+          accountId: accountId,
           FullName: fullName,
+          email: email,
           avatar: "",
         }
       );
