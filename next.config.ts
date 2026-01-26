@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Enable build output caching
+  generateBuildId: async () => {
+    // Use git commit hash or timestamp for cache invalidation
+    return process.env.VERCEL_GIT_COMMIT_SHA || `build-${Date.now()}`;
+  },
+  
   experimental: {
     staleTimes: {
       dynamic: 30,
