@@ -5,6 +5,7 @@ import { ID } from "appwrite";
 import { parseStringify } from "@/lib/utils";
 import { cookies } from "next/headers";
 import { appwriteConfig } from "@/lib/appwrite/config";
+import { cache } from "react";
 
 const handleError = (error: unknown, message: string) => {
   console.log(error, message);
@@ -134,7 +135,8 @@ export const verifySecret = async ({
   }
 };
 
-export const getCurrentUser = async () => {
+// Cache getCurrentUser to prevent duplicate API calls during the same request
+export const getCurrentUser = cache(async () => {
   try {
     const { account, databases } = await createSessionClient();
 
@@ -163,10 +165,7 @@ export const getCurrentUser = async () => {
     console.error("Error getting current user:", error);
     return null;
   }
-};
-
-// Cache wrapper for getCurrentUser to avoid redundant calls
-export { getCurrentUser as default };
+});
 
 export const signOutUser = async () => {
   const { account } = await createSessionClient();
