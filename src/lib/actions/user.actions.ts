@@ -41,19 +41,35 @@ export const createAccount = async ({
     // Try to store user data in database (optional, won't block auth if fails)
     try {
       const { databases } = await createAdminClient();
-      await databases.createDocument(
-        appwriteConfig.databaseId,
-        appwriteConfig.usersCollectionId,
-        accountId,
-        {
-          // Match Appwrite collection attribute names (case sensitive)
-          accountId: accountId,
-          FullName: fullName,
-          email: email,
-          avatar: "",
+      
+      // Check if user already exists
+      try {
+        await databases.getDocument(
+          appwriteConfig.databaseId,
+          appwriteConfig.usersCollectionId,
+          accountId
+        );
+        console.log("User document already exists");
+      } catch (getError: any) {
+        // User doesn't exist, create new document
+        if (getError.code === 404) {
+          await databases.createDocument(
+            appwriteConfig.databaseId,
+            appwriteConfig.usersCollectionId,
+            accountId,
+            {
+              // Match Appwrite collection attribute names (case sensitive)
+              accountId: accountId,
+              FullName: fullName,
+              email: email,
+              avatar: "",
+            }
+          );
+          console.log("User document created in database");
+        } else {
+          throw getError;
         }
-      );
-      console.log("User document created in database");
+      }
     } catch (dbError) {
       console.warn("Warning: Could not create user document in database:", dbError);
       // Don't fail the entire sign up process if database write fails
@@ -106,7 +122,7 @@ export const verifySecret = async ({
     cookieStore.set("appwrite-session", session.secret, {
       path: "/",
       httpOnly: true,
-      sameSite: "none", // allow in Codespaces HTTPS environment
+      sameSite: "strict",
       secure: true,
     });
 
