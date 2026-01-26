@@ -45,6 +45,8 @@ interface Props {
 }
 
 export const ShareInput = ({ file, onInputChange, onRemove }: Props) => {
+  const fileData = file as Models.Document & { users?: string[] };
+  
   return (
     <>
       <ImageThumbnail file={file} />
@@ -63,12 +65,12 @@ export const ShareInput = ({ file, onInputChange, onRemove }: Props) => {
           <div className="flex justify-between">
             <p className="subtitle-2 text-light-100">Shared with</p>
             <p className="subtitle-2 text-light-200">
-              {file.users.length} users
+              {fileData.users?.length || 0} users
             </p>
           </div>
 
           <ul className="pt-2">
-            {file.users.map((email: string) => (
+            {fileData.users?.map((email: string) => (
               <li
                 key={email}
                 className="flex items-center justify-between gap-2"

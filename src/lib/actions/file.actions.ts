@@ -36,11 +36,11 @@ export const uploadFile = async ({
       name: bucketFile.name,
       url: constructFileUrl(bucketFile.$id),
       extension: getFileType(bucketFile.name).extension,
-      size: bucketFile.sizeOriginal,
+      size: bucketFile.sizeOriginal.toString(), // Convert to string
       owner: ownerId,
       accountId,
       users: [],
-      bucketFileId: bucketFile.$id,
+      bucketfield: bucketFile.$id, // Changed to match Appwrite collection
     };
 
     const newFile = await databases
@@ -69,10 +69,11 @@ const createQueries = (
   sort: string,
   limit?: number,
 ) => {
+  const user = currentUser as Models.Document & { email?: string };
   const queries = [
     Query.or([
       Query.equal("owner", [currentUser.$id]),
-      Query.contains("users", [currentUser.email]),
+      Query.contains("users", [user.email || ""]),
     ]),
   ];
 
@@ -97,12 +98,6 @@ export const getFiles = async ({
   sort = "$createdAt-desc",
   limit,
 }: GetFilesProps) => {
-  // Demo mode - return empty file list
-  return parseStringify({
-    total: 0,
-    documents: [],
-  });
-  /*
   const { databases } = await createAdminClient();
 
   try {
@@ -123,7 +118,6 @@ export const getFiles = async ({
   } catch (error) {
     handleError(error, "Failed to get files");
   }
-  */
 };
 
 export const renameFile = async ({
@@ -203,13 +197,53 @@ export const deleteFile = async ({
 
 // ============================== TOTAL FILE SPACE USED
 export async function getTotalSpaceUsed() {
-  // Demo mode - return mock data
-  return parseStringify({
-    used: 0,
-    image: { size: 0, latestDate: new Date().toISOString() },
-    document: { size: 0, latestDate: new Date().toISOString() },
-    video: { size: 0, latestDate: new Date().toISOString() },
-    audio: { size: 0, latestDate: new Date().toISOString() },
-    other: { size: 0, latestDate: new Date().toISOString() },
-  });
+  try {
+    const { databases } = await createAdminClient();
+    const currentUser = await getCurrentUser();
+
+    if (!currentUser) throw new Error("User not found");
+
+    const user = currentUser as Models.Document & { email?: string };
+    
+    // Get all files for the current user
+    const files = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.filesCollectionId,
+      [
+        Query.or([
+          Query.equal("owner", [currentUser.$id]),
+          Query.contains("users", [user.email || ""]),
+        ]),
+      ]
+    );
+
+    const totalSpace = {
+      image: { size: 0, latestDate: "" },
+      document: { size: 0, latestDate: "" },
+      video: { size: 0, latestDate: "" },
+      audio: { size: 0, latestDate: "" },
+      other: { size: 0, latestDate: "" },
+      used: 0,
+    };
+
+    files.documents.forEach((file: Models.Document) => {
+      const fileData = file as Models.Document & { type?: string; size?: string };
+      const fileType = fileData.type as FileType;
+      const fileSize = parseInt(fileData.size || "0", 10) || 0;
+      
+      totalSpace[fileType].size += fileSize;
+      totalSpace.used += fileSize;
+
+      if (
+        !totalSpace[fileType].latestDate ||
+        new Date(file.$updatedAt) > new Date(totalSpace[fileType].latestDate)
+      ) {
+        totalSpace[fileType].latestDate = file.$updatedAt;
+      }
+    });
+
+    return parseStringify(totalSpace);
+  } catch (error) {
+    handleError(error, "Failed to calculate total space used");
+  }
 }

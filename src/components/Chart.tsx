@@ -34,13 +34,19 @@ export const Chart = ({ used = 0 }: { used: number }) => {
   return (
     <Card className="chart">
       <CardContent className="flex-1 p-0">
-        <ChartContainer config={chartConfig} className="chart-container" style={{ height: "250px", width: "100%" }}>
+        <ChartContainer 
+          id="storage-chart"
+          config={chartConfig} 
+          className="chart-container"
+        >
           <RadialBarChart
             data={chartData}
             startAngle={90}
             endAngle={Number(calculatePercentage(used)) + 90}
             innerRadius={80}
             outerRadius={110}
+            width={250}
+            height={250}
           >
             <PolarGrid
               gridType="circle"
