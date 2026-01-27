@@ -8,8 +8,8 @@ import { appwriteConfig } from "@/lib/appwrite/config";
 import { cache } from "react";
 
 const handleError = (error: unknown, message: string) => {
-  console.log(error, message);
-  throw error;
+  console.error(message, error);
+  // Don't throw - let calling functions handle errors by returning null
 };
 
 export const sendEmailOTP = async ({ email }: { email: string }) => {
@@ -21,6 +21,7 @@ export const sendEmailOTP = async ({ email }: { email: string }) => {
     return session.userId;   // Return the user's account ID 
   } catch (error) {
     handleError(error, "Failed to send email OTP");
+    return null;
   }
 };
 
@@ -80,6 +81,7 @@ export const createAccount = async ({
   } catch (error) {
     console.error("Error in createAccount:", error);
     handleError(error, "Failed to create account");
+    return null;
   }
 };
 
@@ -98,6 +100,7 @@ export const signInUser = async ({ email }: { email: string }) => {
   } catch (error) {
     console.error("Error in signInUser:", error);
     handleError(error, "Failed to sign in user");
+    return null;
   }
 };
 
@@ -132,6 +135,7 @@ export const verifySecret = async ({
   } catch (error) {
     console.error("Error verifying OTP:", error);
     handleError(error, "Failed to verify OTP");
+    return null;
   }
 };
 
@@ -181,5 +185,6 @@ export const signOutUser = async () => {
   } catch (error) {
     console.error("Error signing out:", error);
     handleError(error, "Failed to sign out");
+    return null;
   }
 };

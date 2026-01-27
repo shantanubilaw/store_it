@@ -26,6 +26,10 @@ export const createSessionClient = async () => {
 };
 
 export const createAdminClient = async () => {
+  if (!appwriteConfig.endpointUrl || !appwriteConfig.projectId || !appwriteConfig.secretKey) {
+    throw new Error('Missing required Appwrite configuration. Please check your environment variables.');
+  }
+
   const client = new sdk.Client()
     .setEndpoint(appwriteConfig.endpointUrl)
     .setProject(appwriteConfig.projectId)
