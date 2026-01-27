@@ -142,7 +142,13 @@ export const verifySecret = async ({
 // Cache getCurrentUser to prevent duplicate API calls during the same request
 export const getCurrentUser = cache(async () => {
   try {
-    const { account, databases } = await createSessionClient();
+    const sessionClient = await createSessionClient();
+    
+    if (!sessionClient) {
+      return null;
+    }
+
+    const { account, databases } = sessionClient;
 
     const accountDetails = await account.get();
     
@@ -172,9 +178,15 @@ export const getCurrentUser = cache(async () => {
 });
 
 export const signOutUser = async () => {
-  const { account } = await createSessionClient();
-
   try {
+    const sessionClient = await createSessionClient();
+    
+    if (!sessionClient) {
+      console.log("No active session to sign out");
+      return;
+    }
+
+    const { account } = sessionClient;
     await account.deleteSession("current");
 
     // Clear session cookie
